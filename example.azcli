@@ -10,8 +10,6 @@
 az account set -s xxxx
 $RGname="SNP-TEST-RG"
 $RegionName="germanywestcentral"
-$AdminName="azureadmin"
-$AdminPwd="Start12345678"
 
 # Resource Group
 az group create -n $RGname -l $RegionName
@@ -22,10 +20,6 @@ az network vnet create -n hubvnet -g $RGname --address-prefixes 10.0.0.0/24 fd12
 az network vnet subnet create -n GatewaySubnet -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.0/26 fd12:3456:0:0::/64
 az network vnet subnet create -n DnsSubnet -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.64/26 fd12:3456:0:1::/64
 az network vnet subnet create -n Subnet-1 -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.128/26 fd12:3456:0:2::/64
-
-
-az network vnet create -n spokevnet02 -g $RGname --address-prefixes 10.0.2.0/24 10.19.0.0/16 fd12:3458::/32 -l $RegionName
-
 
 #
 # SCENARIO - IPv4-Only Propogation
@@ -69,6 +63,8 @@ az network vnet peering create -n "spokevnet02-hubvnet" -g $RGname --vnet-name s
 
 # SCENARIO - Check VM NIC "Effective Routes"
 # Create VMs
+$AdminName="azureadmin"
+$AdminPwd="Start12345678"
 az vm create -n hubvm1 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet DnsSubnet --vnet-name hubvnet --size Standard_B2s
 az vm create -n vm4 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet sn-corp-ipv4-1 --vnet-name spokevnet01 --size Standard_B2s --public-ip-address ""
 az vm create -n vm64 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet sn-corp-ipv64-1 --vnet-name spokevnet02 --size Standard_B2s
