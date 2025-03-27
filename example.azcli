@@ -1,0 +1,75 @@
+# Azure PowerShell for variable types used from VS Code
+# https://learn.microsoft.com/en-us/cli/azure/azure-cli-variables?tabs=bash
+
+# Scenario - spokevnet with following subnets:
+#  - Routable subnet-corp-ip with non-overlapping IP ranges propogated to HubVNET (and ER/VPN Gateway)
+#  - Overlpping subnets with CIDR /22 IPv4 not propagated to the HubVnet (duplicate)
+#  - Use Subnet-Peering for peering "subnet-corp-ip" (in spokevnet) to the subnets in HubVnet
+# Contact Microsoft for onboarding subscription with this subnet peering feature
+
+az account set -s xxxx
+$RGname="SNP-TEST-RG"
+$RegionName="germanywestcentral"
+$AdminName="azureadmin"
+$AdminPwd="Start12345678"
+
+# Resource Group
+az group create -n $RGname -l $RegionName
+
+# HubVnet - VNET Create
+az network vnet create -n hubvnet -g $RGname --address-prefixes 10.0.0.0/24 fd12:3456::/32 -l $RegionName
+# HubVnet - SUBNET Create
+az network vnet subnet create -n GatewaySubnet -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.0/26 fd12:3456:0:0::/64
+az network vnet subnet create -n DnsSubnet -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.64/26 fd12:3456:0:1::/64
+az network vnet subnet create -n Subnet-1 -g $RGname --vnet-name hubvnet --address-prefixes 10.0.0.128/26 fd12:3456:0:2::/64
+
+
+az network vnet create -n spokevnet02 -g $RGname --address-prefixes 10.0.2.0/24 10.19.0.0/16 fd12:3458::/32 -l $RegionName
+
+
+#
+# SCENARIO - IPv4-Only Propogation
+#
+# SPOKE VNET 01 - VNET Create
+az network vnet create -n spokevnet01 -g $RGname --address-prefixes 10.0.1.0/24 10.19.0.0/16 fd12:3457::/32 -l $RegionName
+# SPOKE VNET 01 - Subnets Create
+az network vnet subnet create -n sn-corp-ipv4-1 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.0.1.0/27
+az network vnet subnet create -n sn-nonrt-01 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.19.0.0/22
+az network vnet subnet create -n sn-nonrt-02 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.19.4.0/22
+az network vnet subnet create -n sn-nonrt-03 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.19.8.0/22
+az network vnet subnet create -n sn-nonrt-04 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.19.12.0/22
+az network vnet subnet create -n sn-nonrt-05 -g $RGname --vnet-name spokevnet01 --address-prefixes 10.19.16.0/22
+
+# SUBNET PEERING - Hub-to-Spoke01 - IPv4 Only 
+az feature register .... #Contact Microsoft for enabling subnet-peering feature
+az network vnet peering create -n "hubvnet-spokevnet01" -g $RGname --vnet-name hubvnet --remote-vnet spokevnet01 --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names sn-corp-ipv4-1 sn-corp-ipv64-1 --local-subnet-names GatewaySubnet DnsSubnet --peer-complete-vnet false --enable-only-ipv6 0
+az network vnet peering create -n "spokevnet01-hubvnet" -g $RGname --vnet-name spokevnet01 --remote-vnet hubvnet --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names GatewaySubnet DnsSubnet --local-subnet-names sn-corp-ipv4-1 sn-corp-ipv64-1 --peer-complete-vnet false --enable-only-ipv6 0
+# RESULT - IPv4 subnet peering used.  IPv6 routes not propogated.
+# NOTE - Setting flag --enable-only-ipv6 to 1 or true will not work since "sn-corp-ipv4-1" is missing IPv6 CIDR range. Mixed IPv4 and IPv6/4 not supported
+
+#
+# SCENARIO - IPv6 and IPv6 Propogation
+#
+# SPOKE VNET 02 - VNET Create
+az network vnet create -n spokevnet02 -g $RGname --address-prefixes 10.0.2.0/24 10.19.0.0/16 fd12:3458::/32 -l $RegionName
+# SPOKE VNET 02 - Subnets Create
+az network vnet subnet create -n sn-corp-ipv4-1 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.0.2.0/27
+az network vnet subnet create -n sn-corp-ipv64-1 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.0.2.32/27 fd12:3458:0:0::/64
+az network vnet subnet create -n sn-nonrt-01 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.19.0.0/22
+az network vnet subnet create -n sn-nonrt-02 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.19.4.0/22
+az network vnet subnet create -n sn-nonrt-03 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.19.8.0/22
+az network vnet subnet create -n sn-nonrt-04 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.19.12.0/22
+az network vnet subnet create -n sn-nonrt-05 -g $RGname --vnet-name spokevnet02 --address-prefixes 10.19.16.0/22
+
+# SUBNET PEERING - Hub-to-Spoke02 - Dual-Stack IPv6 Route Propogation
+az network vnet peering create -n "hubvnet-spokevnet02" -g $RGname --vnet-name hubvnet --remote-vnet spokevnet02 --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names sn-corp-ipv64-1 --local-subnet-names GatewaySubnet DnsSubnet --peer-complete-vnet false --enable-only-ipv6 1
+az network vnet peering create -n "spokevnet02-hubvnet" -g $RGname --vnet-name spokevnet02 --remote-vnet hubvnet --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names GatewaySubnet DnsSubnet --local-subnet-names sn-corp-ipv64-1 --peer-complete-vnet false --enable-only-ipv6 1
+
+
+
+# SCENARIO - Check VM NIC "Effective Routes"
+# Create VMs
+az vm create -n hubvm1 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet DnsSubnet --vnet-name hubvnet --size Standard_B2s
+az vm create -n vm4 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet sn-corp-ipv4-1 --vnet-name spokevnet01 --size Standard_B2s --public-ip-address ""
+az vm create -n vm64 -g $RGname --admin-password $AdminPwd --admin-username $AdminName --image Ubuntu2404 --subnet sn-corp-ipv64-1 --vnet-name spokevnet02 --size Standard_B2s
+
