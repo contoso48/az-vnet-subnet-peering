@@ -73,7 +73,6 @@ az vm create -n vm64 -g $RGname --admin-password $AdminPwd --admin-username $Adm
 
 # SCENARIO - Cross-Subscription Subnet-Peering
 az account set -s yyyyy
-az account set -s ddef7361-40ee-46c6-ad57-4c1fbc805d7b
 $RGname2="SNP-TEST2-RG"
 $RegionName="germanywestcentral"
 # Resource Group - Sub2
@@ -93,15 +92,15 @@ az network vnet subnet create -n sn-nonrt-05 -g $RGname2 --vnet-name spokevnet03
 $spokevnetid=$(az network vnet show --name spokevnet03 -g $RGname2 --query id  --output tsv)
 echo $spokevnetid
 # AZ SUB CONTEXT - HubVNET Subscription
-az account set -s xxxxx
+az account set -s <SUBID1>
 $hubvnetid=$(az network vnet show --name hubvnet -g $RGname --query id  --output tsv)
 echo $hubvnetid
 # Use the full texts of the VNET ResourceID below (instead of a parameter)
 # ex: /subscriptions/<SUBID>/resourceGroups/SNP-TEST2-RG/providers/Microsoft.Network/virtualNetworks/spokevnet03/subnets/sn-corp-ipv4-1
 #
 ## CONTEXT SPOKEVNET SUB
-az account set -s yyyyy
-az network vnet peering create -n "spokevnet03-hubvnet" -g $RGname2 --vnet-name spokevnet03 --remote-vnet /subscriptions/8bdb997c-10e5-403f-9bdd-324b3f520a56/resourceGroups/SNP-TEST-RG/providers/Microsoft.Network/virtualNetworks/hubvnet --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names DnsSubnet --local-subnet-names sn-corp-ipv64-1 sn-corp-ipv4-1 --peer-complete-vnet false --enable-only-ipv6 0
+az account set -s <SUBID2>
+az network vnet peering create -n "spokevnet03-hubvnet" -g $RGname2 --vnet-name spokevnet03 --remote-vnet /subscriptions/<SUBID1>/resourceGroups/SNP-TEST-RG/providers/Microsoft.Network/virtualNetworks/hubvnet --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names DnsSubnet --local-subnet-names sn-corp-ipv64-1 sn-corp-ipv4-1 --peer-complete-vnet false --enable-only-ipv6 0
 # SUBNET PEERING - Hub-to-Spoke03 - Dual-Stack IPv6 Route Propogation - CROSS SUBSCRIPITION
 az account set -s xxxxx
-az network vnet peering create -n "hubvnet-spokevnet03" -g $RGname --vnet-name hubvnet --remote-vnet /subscriptions/ddef7361-40ee-46c6-ad57-4c1fbc805d7b/resourceGroups/SNP-TEST2-RG/providers/Microsoft.Network/virtualNetworks/spokevnet03 --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names sn-corp-ipv64-1 sn-corp-ipv4-1 --local-subnet-names DnsSubnet --peer-complete-vnet false --enable-only-ipv6 0
+az network vnet peering create -n "hubvnet-spokevnet03" -g $RGname --vnet-name hubvnet --remote-vnet /subscriptions/<SUBID2>/resourceGroups/SNP-TEST2-RG/providers/Microsoft.Network/virtualNetworks/spokevnet03 --allow-forwarded-traffic --allow-vnet-access --remote-subnet-names sn-corp-ipv64-1 sn-corp-ipv4-1 --local-subnet-names DnsSubnet --peer-complete-vnet false --enable-only-ipv6 0
