@@ -5,7 +5,11 @@
 #  - Routable subnet-corp-ip with non-overlapping IP ranges propogated to HubVNET (and ER/VPN Gateway)
 #  - Overlpping subnets with CIDR /22 IPv4 not propagated to the HubVnet (duplicate)
 #  - Use Subnet-Peering for peering "subnet-corp-ip" (in spokevnet) to the subnets in HubVnet
-# Contact Microsoft for onboarding subscription with this subnet peering feature
+# Sign-up as a first step using the linked form at: https://learn.microsoft.com/en-us/azure/virtual-network/how-to-configure-subnet-peering
+# Then register for each subscription
+az feature register --namespace Microsoft.Network --name AllowMultiplePeeringLinksBetweenVnets
+# Then verify "registered" status
+az feature show --name AllowMultiplePeeringLinksBetweenVnets --namespace Microsoft.Network --query 'properties.state' -o tsv
 
 az account set -s <SUBID1>
 $RGname="SNP-TEST-RG"
