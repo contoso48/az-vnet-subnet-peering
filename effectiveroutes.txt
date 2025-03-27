@@ -1,0 +1,17 @@
+
+# SpokeVnet01 VM NIC view of effective routes - scenario IPv4 only
+"Source","State","Address Prefixes","Next Hop Type","Next Hop IP Address","User Defined Route Name"
+"Default","Active","10.0.1.0/24","Virtual network","",""
+"Default","Active","10.19.0.0/16","Virtual network","",""
+"Default","Active","10.0.0.0/26","VNet peering","",""
+"Default","Active","10.0.0.64/26","VNet peering","",""
+
+
+# HubVNET VM NIC view of effective routes - scenario IPv6 enabled - both IPv4 and IPv6 routes are propogated
+"Source","State","Address Prefixes","Next Hop Type","Next Hop IP Address","User Defined Route Name"
+"Default","Active","10.0.0.0/24","Virtual network","",""
+"Default","Active","10.0.2.0/27","VNet peering","",""
+"Default","Active","10.0.2.32/27","VNet peering","",""
+"Default","Active","fd12:3456::/32","Virtual network","",""
+"Default","Active","fd12:3458::/64","VNet peering","",""
+
