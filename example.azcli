@@ -7,9 +7,9 @@
 #  - Use Subnet-Peering for peering "subnet-corp-ip" (in spokevnet) to the subnets in HubVnet
 # Sign-up as a first step using the linked form at: https://learn.microsoft.com/en-us/azure/virtual-network/how-to-configure-subnet-peering
 # Then register for each subscription
-az feature register --namespace Microsoft.Network --name AllowMultiplePeeringLinksBetweenVnets
+az feature register --namespace Microsoft.Network <param to be supplied>
 # Then verify "registered" status
-az feature show --name AllowMultiplePeeringLinksBetweenVnets --namespace Microsoft.Network --query 'properties.state' -o tsv
+az feature show --name  <param to be supplied> --namespace Microsoft.Network --query 'properties.state' -o tsv
 
 az account set -s <SUBID1>
 $RGname="SNP-TEST-RG"
